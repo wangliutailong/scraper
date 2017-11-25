@@ -23,10 +23,10 @@ def save_comment_data(soup, file):
         except:
             vote = ""
         try:
-            rate = cm.find("", {"class": re.compile("^allstar(\d)+ rating$")})["title"].strip()
-            # rate = cm.find("",{"class":"allstar10 rating"})["title"]
+            rate = cm.find("", {"class": re.compile("^allstar")})["title"]
         except:
             rate = ""
+            print("Warning: not found the user rate")
         try:
             time = cm.find("", {"class": "comment-time"}).get_text().strip()
         except:
@@ -43,7 +43,7 @@ def save_comment_data(soup, file):
             pass
 
 prefix = 'https://movie.douban.com/subject/26322642/comments'
-first_url = "https://movie.douban.com/subject/26883064/comments"
+first_url = prefix
 header={'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36',
         'Connection':'keep-alive'}
 
@@ -62,8 +62,8 @@ soup = BeautifulSoup(html,"lxml")
 save_comment_data(soup, "data.csv")
 next_page = soup.findAll("a",{"class":"next"})
 
-print(next_page)
-print(next_page[0].attrs["href"])
+# print(next_page)
+# print(next_page[0].attrs["href"])
 
 i = 1
 while (next_page != []):
@@ -73,18 +73,21 @@ while (next_page != []):
     soup = BeautifulSoup(html, "lxml")
     save_comment_data(soup, "data.csv")
     next_page = soup.findAll("a", {"class": "next"})
-    print("loop i = %d" % i)
+    print("scrap web loop i = %d" % i)
     i += 1
 
 
 
 csvf = open("data.csv","r")
+total = len(csvf.readlines())
+#Return the pointer back to start of file
+csvf.seek(0)
 reader = csv.reader(csvf)
-
-
 sentiments = []
 rate = []
+cnt = 1
 for row in reader:
+    print("processing data %%%d" % (float(cnt)/total*100))
     s = SnowNLP(row[4])
     sentiments.append(s.sentiments)
     if(row[2] == "很差"):
@@ -97,6 +100,7 @@ for row in reader:
         rate.append(4)
     else:
         rate.append(5)
+    cnt +=1
 
 
 plt.title("sentiments distribution (simple size %d)" % len(sentiments))
@@ -105,7 +109,7 @@ plt.ylabel("number of people")
 plt.hist(sentiments,bins=10)
 plt.show()
 
-print(rate)
+#print(rate)
 
 plt.title("User rate (simple size %d)" % len(sentiments))
 plt.xlabel("Score")
